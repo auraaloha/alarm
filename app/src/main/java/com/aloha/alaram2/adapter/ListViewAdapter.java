@@ -1,6 +1,8 @@
 package com.aloha.alaram2.adapter;
 
 import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.util.Log;
@@ -16,6 +18,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.aloha.alaram2.R;
+import com.aloha.alaram2.database.DBhelper;
+import com.aloha.alaram2.database.Database;
 
 import java.util.ArrayList;
 
@@ -236,5 +240,25 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
         alarmList.add(object);
     }
 
+    public void makeAlarmList(SQLiteDatabase mDB) {
+        Cursor mCursor = mDB.rawQuery("SELECT * FROM "+ Database.TABLENAME, null);
+
+        while(mCursor.moveToNext()) {
+            Alarm alarm = new Alarm();
+            alarm.setId(mCursor.getInt(0));
+            alarm.setKind(mCursor.getInt(1));
+            alarm.setActive(mCursor.getInt(2));
+            alarm.setDay(mCursor.getInt(3));
+            alarm.setTime(mCursor.getInt(4));
+            alarm.setRepeat(mCursor.getInt(5));
+            alarm.setVib(mCursor.getInt(6));
+            alarm.setSound(mCursor.getInt(7));
+            alarm.setSource(mCursor.getString(8));
+
+            add(alarm);
+        }
+
+        mCursor.close();
+    }
 
 }

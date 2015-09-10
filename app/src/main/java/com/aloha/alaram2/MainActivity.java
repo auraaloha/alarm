@@ -14,6 +14,8 @@ import com.aloha.alaram2.adapter.Alarm;
 import com.aloha.alaram2.adapter.ListViewAdapter;
 import com.aloha.alaram2.database.DBhelper;
 
+import java.sql.SQLException;
+
 
 public class MainActivity extends Activity {
 
@@ -40,11 +42,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //prac
-        font = Typeface.createFromAsset(getBaseContext().getAssets(), "font/Roboto-Medium.ttf");
-        TextView robo = (TextView) findViewById(R.id.roboto);
-        robo.setTypeface(font);
-
         init();
     }
 
@@ -57,6 +54,11 @@ public class MainActivity extends Activity {
 
     private void openDB() {
         mDBhelper = new DBhelper(this);
+        try {
+            mDBhelper.open();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void getPhoneResolution() {
@@ -100,9 +102,10 @@ public class MainActivity extends Activity {
         alarmListView.setAdapter(adapter);
         alarmListView.setDivider(null);
         adapter.setNotifyOnChange(true);
-        adapter.add(new Alarm(2, 1, 0b11, 700, 1, 1, 1, "MUSIC1"));
-        adapter.add(new Alarm(1, 1, 0b111, 830, 1, 1, 1, "MUSIC2"));
-        adapter.add(new Alarm(1, 2, 0b1010110, 1330, 1, 1, 1, "MUSIC3"));
+
+        mDBhelper.insertColumn(1,1,0b1,1230,1,1,1,"MUSIC1");
+
+        adapter.makeAlarmList(mDBhelper.mDB);
 
 
     }

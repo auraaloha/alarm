@@ -14,6 +14,10 @@ public class Alarm {
     public final int THR = 4;
     public final int FRI = 5;
     public final int SAT = 6;
+
+
+
+    private int id;
     private int kind;
     private int active;
     private boolean[] day;
@@ -24,7 +28,11 @@ public class Alarm {
     private String source;
     private String time_s;
 
-    public Alarm(int kind, int active, int day, int time, int repeat, int vibration, int sound, String source) {
+    public Alarm(){
+        this.day = new boolean[7];
+    }
+
+    public Alarm(int id, int kind, int active, int day, int time, int repeat, int vibration, int sound, String source) {
         this.kind = kind;
         this.active = active;
         this.day = new boolean[7];
@@ -33,6 +41,14 @@ public class Alarm {
         time_s = changeIntToTime(time);
         changeIntToDay(day);
         Log.v("TIME ADDED", time_s);
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public int getRepeat() {
@@ -71,8 +87,8 @@ public class Alarm {
         return day;
     }
 
-    public void setDay(boolean[] day) {
-        this.day = day;
+    public void setDay(int day) {
+        changeIntToDay(day);
     }
 
     public String getTime_s() {
@@ -105,6 +121,7 @@ public class Alarm {
 
     public void setTime(int time) {
         this.time = time;
+        this.time_s = changeIntToTime(time);
     }
 
     public String changeIntToTime(int time) {
@@ -172,7 +189,5 @@ public class Alarm {
             temp = temp >> 1;
             dayIndex++;
         }
-
-        Log.v("CHANGEDAY", "FINISHED");
     }
 }

@@ -43,9 +43,16 @@ public class DBhelper {
         values.put(Database.CreateDB.VIB, vibration);
         values.put(Database.CreateDB.SOUND, sound);
         values.put(Database.CreateDB.SOURCE, source);
+
         return mDB.insert(Database.TABLENAME, null, values);
 
     }
+
+//    public long modifyColumn(int id, int kind, int active, int day, int time, int repeat, int vibration, int sound, String source){
+//
+//
+//    }
+
 
     private class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -64,9 +71,6 @@ public class DBhelper {
         }
     }
 
-    /*
-    public long modifyColumn(int id, int kind, int active, int day, int time, int repeat, int vibration, int sound, String source){
 
-    }
-    */
+
 }

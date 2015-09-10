@@ -7,7 +7,7 @@ import android.provider.BaseColumns;
  */
 public final class Database {
 
-    static final String TABLENAME = "alarmaloha";
+    public static final String TABLENAME = "alarmaloha";
 
     public static final class CreateDB implements BaseColumns {
 
@@ -20,16 +20,16 @@ public final class Database {
         public static final String SOUND = "mute";
         public static final String SOURCE = "source";
         public static final String CREATEDB =
-                "create table " + TABLENAME + "("
+                "CREATE TABLE " + TABLENAME + "("
                         + _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                         + KIND + " UNSIGNED TINYINT NOT NULL , "
                         + ACTIVE + " UNSIGNED TINYINT NOT NULL , "
                         + DAY + " UNSIGNED INT NOT NULL , "
                         + TIME + " UNSIGNED MEDIUMINT NOT NULL , "
-                        + REPEAT + "UNSIGNED TINYINT NOT NULL , "
-                        + VIB + "UNSIGNED TINYINT NOT NULL , "
-                        + SOUND + "UNSIGNED TINYINT NOT NULL , "
-                        + SOURCE + "VARCHAR(100) NOT NULL);";
+                        + REPEAT + " UNSIGNED TINYINT NOT NULL , "
+                        + VIB + " UNSIGNED TINYINT NOT NULL , "
+                        + SOUND + " UNSIGNED TINYINT NOT NULL , "
+                        + SOURCE + " VARCHAR(100) NOT NULL);";
     }
 
 
