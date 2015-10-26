@@ -16,11 +16,11 @@ public class Alarm {
     public final int SAT = 6;
 
 
-
     private int id;
     private int kind;
     private int active;
-    private boolean[] day;
+    private int day;
+    private boolean[] days;
     private int time;
     private int repeat;
     private int vib;
@@ -28,14 +28,20 @@ public class Alarm {
     private String source;
     private String time_s;
 
-    public Alarm(){
-        this.day = new boolean[7];
+
+    private int fastest;
+    private int timeToAdd;
+
+
+    public Alarm() {
+        this.days = new boolean[7];
     }
 
-    public Alarm(int id, int kind, int active, int day, int time, int repeat, int vibration, int sound, String source) {
+    public Alarm(int kind, int active, int day, int time, int repeat, int vibration, int sound, String source) {
         this.kind = kind;
         this.active = active;
-        this.day = new boolean[7];
+        this.day = day;
+        this.days = new boolean[7];
         this.time = time;
 
         time_s = changeIntToTime(time);
@@ -83,12 +89,33 @@ public class Alarm {
         this.source = source;
     }
 
-    public boolean[] getDay() {
+    public int getDay() {
         return day;
     }
 
     public void setDay(int day) {
+        this.day = day;
         changeIntToDay(day);
+    }
+
+    public boolean[] getDays() {
+        return days;
+    }
+
+    public void setDays(boolean[] days) {
+
+        int daysum = 0;
+        int dayvalue = 1;
+
+        for (int i = 0; i < days.length; i++) {
+            if (days[i]) daysum += dayvalue;
+            else ;
+
+            dayvalue *= 2;
+        }
+
+        this.days = days;
+        this.day = daysum;
     }
 
     public String getTime_s() {
@@ -124,6 +151,22 @@ public class Alarm {
         this.time_s = changeIntToTime(time);
     }
 
+    public int getTimeToAdd() {
+        return timeToAdd;
+    }
+
+    public void setTimeToAdd(int timeToAdd) {
+        this.timeToAdd = timeToAdd;
+    }
+
+    public int getFastest() {
+        return fastest;
+    }
+
+    public void setFastest(int fastest) {
+        this.fastest = fastest;
+    }
+
     public String changeIntToTime(int time) {
 
         String time_s = "";
@@ -134,7 +177,7 @@ public class Alarm {
 
         if (time < 2359 && time > 0 && time % 100 < 60) {
             if (time <= 1159) {
-                if (time < 100) time_s += "AM 0";
+                if (time < 100) time_s += "AM 0 ";
                 else time_s += "AM ";
 
                 time_s += time / 100 + "";
@@ -169,7 +212,7 @@ public class Alarm {
         while (loop) {
             switch (temp) {
                 case 1:
-                    this.day[dayIndex] = true;
+                    this.days[dayIndex] = true;
                     loop = false;
                     break;
                 case 0:
@@ -181,7 +224,7 @@ public class Alarm {
                         break;
                     } else {
                         if ((temp & 0b1) == 1) {
-                            this.day[dayIndex] = true;
+                            this.days[dayIndex] = true;
                         }
                     }
                     break;

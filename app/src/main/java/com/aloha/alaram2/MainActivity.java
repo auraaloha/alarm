@@ -1,37 +1,44 @@
 package com.aloha.alaram2;
 
 import android.app.Activity;
-import android.graphics.Typeface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 
 import com.aloha.alaram2.adapter.Alarm;
 import com.aloha.alaram2.adapter.ListViewAdapter;
 import com.aloha.alaram2.database.DBhelper;
+import com.aloha.alaram2.interfaces.AlarmChangeListener;
+import com.aloha.alaram2.manager.Alarmer;
+import com.aloha.alaram2.manager.Notifier;
 
 import java.sql.SQLException;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements View.OnClickListener, AlarmChangeListener {
 
-    //practice
-    Typeface font;
+
+    //prac
+    View.OnClickListener ol;
+    View.OnClickListener cl;
     //Database
     private DBhelper mDBhelper;
     //Listview
     private ListView alarmListView;
     private ListViewAdapter adapter;
+    //Alarm
+    private Alarmer mAlarmer;
+    //Notifier
+    private Notifier mNotifier;
     //phone width, height
     private int mWidth;
     private int mHeight;
-    /**
-     * layout and GUI components  *
-     */
+    /* layout and GUI components  */
     //main menubar
     private RelativeLayout menubarLayout;
     private ImageButton deleteBtn;
@@ -41,19 +48,26 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mAlarmer = new Alarmer(this);
+        mNotifier = new Notifier(this);
 
-        init();
-    }
-
-    private void init() {
         openDB();
         getPhoneResolution();
         makeMenubar();
         makeListView();
+        setAlarmToSystem();
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        mDBhelper.close();
     }
 
     private void openDB() {
-        mDBhelper = new DBhelper(this);
+        mDBhelper = new DBhelper(this, this);
         try {
             mDBhelper.open();
         } catch (SQLException e) {
@@ -86,6 +100,7 @@ public class MainActivity extends Activity {
         addAlarmBtn = new ImageButton(this);
         addAlarmBtn.setBackground(null);
         addAlarmBtn.setImageResource(R.drawable.addalarm);
+        addAlarmBtn.setOnClickListener(this);
         RelativeLayout.LayoutParams addAlarmBtnParams = new RelativeLayout.LayoutParams((int) (mHeight * 0.0555), (int) (mHeight * 0.0555));
         addAlarmBtnParams.addRule(RelativeLayout.CENTER_VERTICAL);
         addAlarmBtnParams.addRule(RelativeLayout.ALIGN_PARENT_END);
@@ -98,17 +113,42 @@ public class MainActivity extends Activity {
     private void makeListView() {
         alarmListView = (ListView) findViewById(R.id.main_alarm_listView);
         //alarmListView.set
-        adapter = new ListViewAdapter(this, R.layout.alarm_listview_row, mWidth, mHeight);
+        adapter = new ListViewAdapter(this, mDBhelper, R.layout.alarm_listview_row, mWidth, mHeight);
         alarmListView.setAdapter(adapter);
         alarmListView.setDivider(null);
         adapter.setNotifyOnChange(true);
 
-        mDBhelper.insertColumn(1,1,0b1,1230,1,1,1,"MUSIC1");
-
-        adapter.makeAlarmList(mDBhelper.mDB);
+        adapter.makeAlarmList();
 
 
     }
 
+    private void setAlarmToSystem() {
+        Alarm nextAlarm = adapter.findNextAlarm();
+        mNotifier.notifyMessage(nextAlarm);
+        mAlarmer.setAlarm(nextAlarm);
+    }
+
+    @Override
+    public void onClick(View v) {
+
+        Intent i = new Intent(MainActivity.this, AddAlarmActivity.class);
+        startActivity(i);
+
+    }
+
+    @Override
+    public void onAlarmDataChanged() {
+        setAlarmToSystem();
+    }
+
+    @Override
+    public void onAlarmDataCreated() {
+        if (adapter != null) {
+            adapter.closeAdapter();
+        }
+        makeListView();
+        setAlarmToSystem();
+    }
 
 }

@@ -2,9 +2,10 @@ package com.aloha.alaram2.adapter;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.media.MediaPlayer;
+import android.os.Environment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,41 +17,61 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.aloha.alaram2.R;
 import com.aloha.alaram2.database.DBhelper;
 import com.aloha.alaram2.database.Database;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 /**
  * Created by seoseongho on 15. 8. 6..
  */
 public class ListViewAdapter extends ArrayAdapter<Alarm> {
 
+    //Constants
     private final static int ALARM_NORMAL = 0x01;
     private final static int ALARM_ONETIME = 0x02;
     private final static int ACTIVE = 0x01;
     private final static int INACTIVE = 0x02;
+    private final String MEDIA_PATH = Environment.getExternalStorageDirectory().getPath() + "/aloha/";
+    public ViewHolder[] holders;
+    //Fonts
     Typeface roboto_regular;
     Typeface roboto_medium;
+    //DB
+    DBhelper mDBhepler;
+    private int rowSelected = -1;
+    //Components
     private LayoutInflater inflater;
     private ArrayList<Alarm> alarmList;
     private Context context;
     private int mWidth;
     private int mHeight;
     private int dayTextSize = 17;
+    private int biggerTextSize = 40;
+    //media player
+    private MediaPlayer mPlayer;
 
-    public ListViewAdapter(Context cnxt, int resource, int phoneWidth, int phoneHeight) {
+    public ListViewAdapter(Context cnxt, DBhelper helper, int resource, int phoneWidth, int phoneHeight) {
         super(cnxt, resource);
         context = cnxt;
         mWidth = phoneWidth;
         mHeight = phoneHeight;
         alarmList = new ArrayList<>();
         inflater = LayoutInflater.from(context);
+        holders = new ViewHolder[100]; // change it to Link structure.
 
         roboto_medium = Typeface.createFromAsset(getContext().getAssets(), "font/Roboto-Medium.ttf");
         roboto_regular = Typeface.createFromAsset(getContext().getAssets(), "font/Roboto-Light.ttf");
+
+        mPlayer = new MediaPlayer();
+
+        mDBhepler = helper;
+
     }
 
     @Override
@@ -60,7 +81,7 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
 
     @Override
     public Alarm getItem(int position) {
-        return null;
+        return alarmList.get(position);
     }
 
     @Override
@@ -75,9 +96,14 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
             convertView = inflater.inflate(R.layout.alarm_listview_row, null);
         }
 
-        Alarm alarm = alarmList.get(position);
-        final boolean[] dayInfo = alarm.getDay();
+        //view holder
+        ViewHolder vHolder = new ViewHolder();
+        holders[position] = vHolder;
+        final Alarm alarm = alarmList.get(position);
+        final boolean[] dayInfo = alarm.getDays();
 
+
+        /** On Click Listeners  **/
         View.OnClickListener dayTvClickListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -87,27 +113,96 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
                 if (dayInfo[dayindex]) {
                     v.setAlpha((float) 0.2);
                     dayInfo[dayindex] = false;
+                    alarm.setDays(dayInfo);
+
+                    //DB access
+                    mDBhepler.modifyColumn(alarm);
+
+
                 } else {
                     v.setAlpha(1);
                     dayInfo[dayindex] = true;
+                    alarm.setDays(dayInfo);
+
+                    //DB access
+                    mDBhepler.modifyColumn(alarm);
                 }
 
             }
         };
 
-        ImageButton alarmlight = new ImageButton(context);
-        alarmlight.setBackground(null);
-        alarmlight.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        alarmlight.setAdjustViewBounds(true);
+        View.OnClickListener circleClickListener = new View.OnClickListener() {
+
+            private int mShortAnimationDuration;
+
+            @Override
+            public void onClick(View v) {
+
+                int rowClicked = (int) v.getTag();
+
+                if (rowClicked != rowSelected) {
+                    activate(rowClicked);
+                    rowSelected = rowClicked;
+                    return;
+                }
+
+                //++animation semaphore is needed
+                Alarm a = getItem(rowClicked);
+
+                if (a.getKind() == ALARM_ONETIME) ; //++onetime alarm off is needed
+                else {
+                    if (a.getActive() == ACTIVE) {
+                        ((ImageButton) v).setImageResource(R.drawable.alram_large_off);
+                        a.setActive(INACTIVE);
+                        //db access
+                        mDBhepler.modifyColumn(a);
+                    } else {
+                        ((ImageButton) v).setImageResource(R.drawable.alram_large_on);
+                        a.setActive(ACTIVE);
+                        //db access
+                        mDBhepler.modifyColumn(a);
+                    }
+                }
+
+            }
+
+        };
+
+        View.OnClickListener rowClickListener = new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                int rowClicked = (int) v.getTag();
+                Log.v("ROW CLICKED", rowClicked + "");
+
+                if (rowSelected != rowClicked) {
+                    activate(rowClicked);
+                    rowSelected = rowClicked;
+                } else if (rowSelected == rowClicked) {
+                    activate(-1);
+                }
+
+            }
+
+        };
+
+
+        vHolder.alarmlight = new ImageButton(context);
+        //set Tag for finding position
+        vHolder.alarmlight.setTag(position);
+        //Image featuring
+        vHolder.alarmlight.setBackground(null);
+        vHolder.alarmlight.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        vHolder.alarmlight.setAdjustViewBounds(true);
         switch (alarm.getKind()) {
             case ALARM_NORMAL:
                 if (alarm.getActive() == ACTIVE)
-                    alarmlight.setImageResource(R.drawable.alram_small_on);
-                else alarmlight.setImageResource(R.drawable.alram_small_off);
+                    vHolder.alarmlight.setImageResource(R.drawable.alram_large_on);
+                else vHolder.alarmlight.setImageResource(R.drawable.alram_large_off);
                 break;
 
             case ALARM_ONETIME:
-                alarmlight.setImageResource(R.drawable.alram_onetime);
+                vHolder.alarmlight.setImageResource(R.drawable.alram_onetime);
                 break;
 
             default:
@@ -116,40 +211,41 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
 
         //Light circle
         RelativeLayout toplayout = (RelativeLayout) convertView.findViewById(R.id.row_top_layout);
+        //Tag top layout with position for row selecting animation
+        toplayout.setTag(position);
+        toplayout.setOnClickListener(rowClickListener);
         toplayout.setLayoutParams(new AbsListView.LayoutParams(mWidth, (int) (mHeight * 0.1448)));
-        RelativeLayout.LayoutParams alarmlightParams = new RelativeLayout.LayoutParams((int) (mHeight * 0.0926), (int) (mHeight * 0.0926));
+        RelativeLayout.LayoutParams alarmlightParams = new RelativeLayout.LayoutParams((int) (mHeight * 0.0856), (int) (mHeight * 0.0856));
         alarmlightParams.addRule(RelativeLayout.ALIGN_PARENT_START);
         alarmlightParams.addRule(RelativeLayout.CENTER_VERTICAL);
-        alarmlightParams.setMarginStart((int) (mWidth * 0.1037));
-        alarmlight.setLayoutParams(alarmlightParams);
-        toplayout.addView(alarmlight);
+        alarmlightParams.setMarginStart((int) (mWidth * 0.0737));
+        vHolder.alarmlight.setLayoutParams(alarmlightParams);
+        vHolder.alarmlight.setOnClickListener(circleClickListener);
+        toplayout.addView(vHolder.alarmlight);
 
         //info layout
         LinearLayout alarmInfoLayout = new LinearLayout(context);
         alarmInfoLayout.setOrientation(LinearLayout.VERTICAL);
         RelativeLayout.LayoutParams alarmInfoLayoutParams = new RelativeLayout.LayoutParams((int) (mWidth * 0.640), ViewGroup.LayoutParams.WRAP_CONTENT);
-        alarmInfoLayoutParams.setMarginStart((int) (mWidth * 0.338));
+        alarmInfoLayoutParams.setMarginStart((int) (mWidth * 0.318));
         alarmInfoLayoutParams.addRule(RelativeLayout.CENTER_VERTICAL);
         alarmInfoLayout.setLayoutParams(alarmInfoLayoutParams);
 
         //Alarm time
-        TextView timeTv = new TextView(context);
-        timeTv.setText(alarm.getTime_s());
-        timeTv.setTextColor(Color.WHITE);
-        timeTv.setTextSize(20);
-        timeTv.setTypeface(roboto_regular);
+        vHolder.timeTv = new TextView(context);
+        vHolder.timeTv.setText(alarm.getTime_s());
+        vHolder.timeTv.setTextScaleX(0.85f);
+        vHolder.timeTv.setTextColor(Color.WHITE);
+        vHolder.timeTv.setTextSize(20);
+        vHolder.timeTv.setTypeface(roboto_regular);
 
         //Days Layout
         LinearLayout daysLayout = new LinearLayout(context);
         LinearLayout.LayoutParams daysLayoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        //daysLayoutParams.addRule(RelativeLayout.BELOW, timeTv.getId());
-        //daysLayoutParams.addRule(RelativeLayout.ALIGN_START,timeTv.getId());
         daysLayout.setLayoutParams(daysLayoutParams);
 
-        Log.v("timeTv ID", "" + timeTv.getId());
 
         //Days TextView
-
         //Layoutparams for all daytextview margin
         LinearLayout.LayoutParams dayTvparams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         dayTvparams.setMarginEnd((int) (mWidth * 0.01));
@@ -225,8 +321,26 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
         daysLayout.addView(fridayTv);
         daysLayout.addView(saturdayTv);
         daysLayout.addView(sundayTv);
-        alarmInfoLayout.addView(timeTv);
+        alarmInfoLayout.addView(vHolder.timeTv);
         alarmInfoLayout.addView(daysLayout);
+
+
+        //etc option layout
+        LinearLayout optionLayout = new LinearLayout(context);
+        LinearLayout.LayoutParams optionLayoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        optionLayout.setOrientation(LinearLayout.HORIZONTAL);
+        optionLayout.setLayoutParams(optionLayoutParams);
+
+        vHolder.songTv = new TextView(context);
+        vHolder.songTv.setText("와리가리 혁오");
+        vHolder.songTv.setTypeface(roboto_medium);
+        vHolder.songTv.setTextSize(3 * dayTextSize / 4);
+        vHolder.songTv.setTextColor(Color.WHITE);
+        vHolder.songTv.setVisibility(View.GONE);
+        //Click Listner (maybe spinner or custom dialog)
+        optionLayout.addView(vHolder.songTv);
+        alarmInfoLayout.addView(optionLayout);
+
 
         //add alarm info layout to top layout
         toplayout.addView(alarmInfoLayout);
@@ -236,14 +350,25 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
     }
 
     @Override
+    public void clear() {
+        super.clear();
+        alarmList.clear();
+        notifyDataSetChanged();
+    }
+
+    @Override
     public void add(Alarm object) {
         alarmList.add(object);
     }
 
-    public void makeAlarmList(SQLiteDatabase mDB) {
-        Cursor mCursor = mDB.rawQuery("SELECT * FROM "+ Database.TABLENAME, null);
+    public void makeAlarmList() {
 
-        while(mCursor.moveToNext()) {
+        clear();
+
+        //modify this later
+        Cursor mCursor = mDBhepler.mDB.rawQuery("SELECT * FROM " + Database.TABLENAME, null);
+
+        while (mCursor.moveToNext()) {
             Alarm alarm = new Alarm();
             alarm.setId(mCursor.getInt(0));
             alarm.setKind(mCursor.getInt(1));
@@ -259,6 +384,156 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
         }
 
         mCursor.close();
+    }
+
+    private void playsong(String source) {
+        mPlayer.reset();
+        try {
+            Log.v("PATH", MEDIA_PATH + "maps.mp3");
+            mPlayer.setDataSource(MEDIA_PATH + "maps.mp3");
+            mPlayer.prepare();
+            mPlayer.start();
+
+            Toast.makeText(context, "재생 : maps.mp3", Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(context, "재생 실패", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    void activate(int rowClicked) {
+        int mShortAnimationDuration = context.getResources().getInteger(
+                android.R.integer.config_shortAnimTime);
+
+        //inactivate present row
+        if (rowSelected >= 0) {
+            //make light circle smaller
+            holders[rowSelected].alarmlight.animate().scaleX(1).scaleY(1);
+            //make time textview smaller
+            holders[rowSelected].timeTv.animate().translationX(1).scaleX(1).scaleY(1).translationY(1);
+            //make song option textview disappear
+            holders[rowSelected].songTv.animate().alpha(0.0f)
+                    .setDuration(mShortAnimationDuration)
+                    .setListener(null);
+            holders[rowSelected].songTv.setVisibility(View.GONE);
+        }
+
+        if (rowClicked == -1) {
+            mPlayer.reset();
+            rowSelected = -1;
+            return;
+        }
+
+        //activate new row
+        //make light circle larger
+        holders[rowClicked].alarmlight.animate().scaleX(1.7f).scaleY(1.7f);
+        //make time textview larger
+        holders[rowClicked].timeTv.animate().translationX(320).scaleX(1.7f).scaleY(1.7f).translationY(-5);
+        //make song option textview appear
+        holders[rowClicked].songTv.setAlpha(0f);
+        holders[rowClicked].songTv.setVisibility(View.VISIBLE);
+        holders[rowClicked].songTv.animate()
+                .alpha(1.0f)
+                .setDuration(mShortAnimationDuration)
+                .setListener(null);
+
+        //play song
+        playsong(null);
+
+
+    }
+
+    public Alarm findNextAlarm() {
+
+        Alarm fastAlarm = null;
+
+        //AM = 0
+        //PM = 1
+
+        Calendar c = Calendar.getInstance();
+        int day = c.get(Calendar.DAY_OF_WEEK) - 1;
+        int hour = c.get(Calendar.HOUR);
+        int am_pm = c.get(Calendar.AM_PM);
+        int min = c.get(Calendar.MINUTE);
+        int curTime = (am_pm * 12 + hour) * 100 + min;
+
+        Log.v("day", "" + day);
+
+        int[] dayindex = new int[7];
+        for (int i = 0; i < 7; i++) {
+            if (i < day) {
+                dayindex[i] = i - day + 7;
+            } else {
+                dayindex[i] = (i - day);
+            }
+        }
+
+
+        Alarm tempAlarm;
+        int temptime;
+        int fasttime = 99999;
+        int whatday = 0;
+        for (int j = 0; j < alarmList.size(); j++) {
+
+            tempAlarm = alarmList.get(j);
+
+            if (tempAlarm.getActive() == ACTIVE) {
+                for (int k = 0; k < 7; k++) {
+                    if (!tempAlarm.getDays()[k]) ;
+                    else {
+                        temptime = dayindex[k] * 10000 + tempAlarm.getTime();
+                        if (temptime <= curTime) {
+                            temptime += 80000;
+                        }
+                        if (fastAlarm == null) {
+                            fastAlarm = tempAlarm;
+                            fasttime = temptime;
+                            whatday = k;
+                        } else {
+                            if (fasttime > temptime) {
+                                fastAlarm = tempAlarm;
+                                fasttime = temptime;
+                                whatday = k;
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+        if (fastAlarm != null) {
+            int intervalTime = fastAlarm.getTime() - curTime;
+            int hourToAdd = 0;
+            int minToAdd = 0;
+            if (intervalTime < 0) {
+                intervalTime = Math.abs(intervalTime);
+                hourToAdd -= intervalTime / 100;
+                minToAdd -= intervalTime % 100;
+            } else if (intervalTime == 0) {
+            } else {
+                hourToAdd += intervalTime / 100;
+                minToAdd += intervalTime % 100;
+            }
+            int timeToAdd = (dayindex[whatday] * 24 * 60 + hourToAdd * 60 + minToAdd) * 60000;
+
+            if (timeToAdd < 0) timeToAdd += 7 * 24 * 60 * 60000;
+            fastAlarm.setFastest(whatday);
+            fastAlarm.setTimeToAdd(timeToAdd);
+        }
+        return fastAlarm;
+
+    }
+
+    public void closeAdapter() {
+        mPlayer.reset();
+        mPlayer.release();
+    }
+
+    public class ViewHolder {
+        public ImageButton alarmlight;
+        public TextView songTv;
+        TextView timeTv;
     }
 
 }
