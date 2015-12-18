@@ -1,6 +1,7 @@
 package com.aloha.alaram2;
 
 import android.app.Activity;
+import android.app.ActivityOptions;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -133,8 +134,16 @@ public class MainActivity extends Activity implements View.OnClickListener, Alar
     public void onClick(View v) {
 
         Intent i = new Intent(MainActivity.this, AddAlarmActivity.class);
-        startActivity(i);
+        Bundle bndlanimation =
+                ActivityOptions.makeCustomAnimation(getApplicationContext(), R.anim.anim1, R.anim.anim2).toBundle();
+        startActivity(i, bndlanimation);
 
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        adapter.mPlayer.stop();
     }
 
     @Override

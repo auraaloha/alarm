@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -30,7 +31,7 @@ import java.util.Calendar;
 /**
  * Created by seoseongho on 15. 8. 6..
  */
-public class ListViewAdapter extends ArrayAdapter<Alarm> {
+public class ListViewAdapter extends ArrayAdapter<Alarm> implements AdapterView.OnItemSelectedListener {
 
     //Constants
     private final static int ALARM_NORMAL = 0x01;
@@ -39,11 +40,16 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
     private final static int INACTIVE = 0x02;
     private final String MEDIA_PATH = Environment.getExternalStorageDirectory().getPath() + "/aloha/";
     public ViewHolder[] holders;
+    //media player
+    public MediaPlayer mPlayer;
     //Fonts
     Typeface roboto_regular;
     Typeface roboto_medium;
     //DB
     DBhelper mDBhepler;
+    //for spinner
+    ArrayList<String> songlist;
+    String[] songnames = new String[]{"maps.mp3", "song2.mp3", "song3.mp3"};
     private int rowSelected = -1;
     //Components
     private LayoutInflater inflater;
@@ -52,9 +58,6 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
     private int mWidth;
     private int mHeight;
     private int dayTextSize = 17;
-    private int biggerTextSize = 40;
-    //media player
-    private MediaPlayer mPlayer;
 
     public ListViewAdapter(Context cnxt, DBhelper helper, int resource, int phoneWidth, int phoneHeight) {
         super(cnxt, resource);
@@ -71,6 +74,12 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
         mPlayer = new MediaPlayer();
 
         mDBhepler = helper;
+
+        //for spinner
+        songlist = new ArrayList<String>();
+        for (int i = 0; i < songnames.length; i++) {
+            songlist.add(songnames[i]);
+        }
 
     }
 
@@ -275,7 +284,7 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
         wednesdayTv.setTag(3);
         //thursday
         TextView thursdayTv = new TextView(context);
-        thursdayTv.setText("Thr");
+        thursdayTv.setText("Thu");
         thursdayTv.setTextColor(Color.WHITE);
         thursdayTv.setTextSize(dayTextSize);
         thursdayTv.setLayoutParams(dayTvparams);
@@ -332,11 +341,12 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
         optionLayout.setLayoutParams(optionLayoutParams);
 
         vHolder.songTv = new TextView(context);
-        vHolder.songTv.setText("와리가리 혁오");
+        vHolder.songTv.setText("Maps - Maroon 5");
         vHolder.songTv.setTypeface(roboto_medium);
         vHolder.songTv.setTextSize(3 * dayTextSize / 4);
         vHolder.songTv.setTextColor(Color.WHITE);
         vHolder.songTv.setVisibility(View.GONE);
+        vHolder.songTv.setBackgroundResource(R.drawable.color_selector);
         //Click Listner (maybe spinner or custom dialog)
         optionLayout.addView(vHolder.songTv);
         alarmInfoLayout.addView(optionLayout);
@@ -528,6 +538,16 @@ public class ListViewAdapter extends ArrayAdapter<Alarm> {
     public void closeAdapter() {
         mPlayer.reset();
         mPlayer.release();
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+
     }
 
     public class ViewHolder {

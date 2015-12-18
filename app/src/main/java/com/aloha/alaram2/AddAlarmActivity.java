@@ -8,6 +8,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -54,10 +55,6 @@ public class AddAlarmActivity extends Activity {
     ImageButton aboveWakeupBtn;
     ImageButton aboveOnetimeBtn;
     ImageButton aboveNormalBtn;
-    //setDay Layout Btns
-    TextView todayBtn;
-    TextView weekBtn;
-    TextView weekendBtn;
     //setWeek Layout Btns;
     TextView[] dayBtns;
     //SetDays Layout Btns;
@@ -69,6 +66,7 @@ public class AddAlarmActivity extends Activity {
     View.OnClickListener alarmKindBtnListener;
     View.OnClickListener alarmDaysBtnClickListener;
     View.OnClickListener alarmWeekBtnClickListener;
+    View.OnClickListener alarmSettingBtnClickListner;
     //kind_alarm_selector;
     int alarm_kind;
     //resolution(pixels)
@@ -242,6 +240,42 @@ public class AddAlarmActivity extends Activity {
             }
         };
 
+        alarmSettingBtnClickListner = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int tag = (int) v.getTag();
+
+                switch (tag) {
+                    case ALPHAICON:
+                        if (settingselect_state[ALPHAICON]) settingselect_state[ALPHAICON] = false;
+                        else settingselect_state[ALPHAICON] = true;
+                        break;
+                    case SOUNDICON:
+                        if (settingselect_state[SOUNDICON]) settingselect_state[SOUNDICON] = false;
+                        else settingselect_state[SOUNDICON] = true;
+                        break;
+                    case VIBICON:
+                        if (settingselect_state[VIBICON]) settingselect_state[VIBICON] = false;
+                        else settingselect_state[VIBICON] = true;
+                        break;
+                    case REPEATICON:
+                        if (settingselect_state[REPEATICON])
+                            settingselect_state[REPEATICON] = false;
+                        else settingselect_state[REPEATICON] = true;
+                        break;
+                    case ONETIMEICON:
+                        if (settingselect_state[ONETIMEICON])
+                            settingselect_state[ONETIMEICON] = false;
+                        else settingselect_state[ONETIMEICON] = true;
+                        break;
+                    default:
+                        break;
+                }
+
+                changeSettingsGUI();
+            }
+        };
+
     }
 
     private void setSelector() {
@@ -327,7 +361,27 @@ public class AddAlarmActivity extends Activity {
         clockLayout = new RelativeLayout(this);
         RelativeLayout.LayoutParams clockLayoutParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, (int) (0.4499 * mHeight));
         clockLayout.setLayoutParams(clockLayoutParams);
-        clockLayout.setBackgroundColor(Color.GREEN);
+        clockLayout.setBackgroundColor(Color.argb(40, 255, 255, 255));
+
+        //temporary clock design
+        ImageButton clockCircle = new ImageButton(this);
+        clockCircle.setBackground(null);
+        clockCircle.setImageResource(R.drawable.minute_circle);
+        clockCircle.setAdjustViewBounds(true);
+        clockCircle.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        RelativeLayout.LayoutParams clockCircleParams = new RelativeLayout.LayoutParams((int) (0.7721 * mWidth), (int) (0.7721 * mWidth));
+        clockCircleParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+        clockLayout.addView(clockCircle, clockCircleParams);
+
+        ImageButton inCircle = new ImageButton(this);
+        inCircle.setBackground(null);
+        inCircle.setImageResource(R.drawable.hour_circle);
+        inCircle.setAdjustViewBounds(true);
+        inCircle.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        RelativeLayout.LayoutParams inCircleParams = new RelativeLayout.LayoutParams((int) (0.5044 * mWidth), (int) (0.5044 * mWidth));
+        inCircleParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+        clockLayout.addView(inCircle, inCircleParams);
+
 
         setDayLayout = new LinearLayout(this);
         LinearLayout.LayoutParams setDayLayoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (int) (0.0846 * mHeight)); //0.1146
@@ -432,6 +486,7 @@ public class AddAlarmActivity extends Activity {
             settingIcons[i].setImageResource(IconDrawables[i]);
             settingIcons[i].setAdjustViewBounds(true);
             settingIcons[i].setTag(i);
+            settingIcons[i].setOnClickListener(alarmSettingBtnClickListner);
 
             LinearLayout.LayoutParams tempParams = new LinearLayout.LayoutParams(IconWidths[i], LinearLayout.LayoutParams.MATCH_PARENT);
             tempParams.setMargins((int) (mWidth * 0.03), 0, (int) (mWidth * 0.03), 0);
